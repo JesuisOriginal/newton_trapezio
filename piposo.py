@@ -446,7 +446,7 @@ class PageTwo(tk.Frame):
         # entry1 = ttk.Entry(self)
         # entry1.pack()
         
-        popup()
+
         # def get_val():
         #     with open('butons.txt', 'w') as fp:
         #         fp.write(e1.get())
