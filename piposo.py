@@ -14,7 +14,6 @@ from numpy import linspace,sin,shape
 from pandas import DataFrame
 import numexpr as ne
 import matplotlib
-
 from scipy.interpolate import interp1d
 from tkinter import *
 from tkinter import ttk
@@ -23,9 +22,10 @@ from matplotlib.figure import Figure
 from tkinter.constants import *
 import json
 import pygame
+from secu import SalsaTequila, stopsalsa
 
 pygame.init()
-crash_sound = pygame.mixer.Sound("bgm.wav")
+crash_sound = pygame.mixer.music.load("bgm.mp3")
 
 
 LARGE_FONT = ("Verdana", 12)
@@ -42,6 +42,7 @@ trapezio = 0
 polino = ""
 pn = ""
 raiz = ""
+pontos_newton = []
 def set_strings(): # ainda n sei como vo usar mas ta aew
     global s1
     global s2
@@ -75,6 +76,7 @@ def janelinha(title="Entrada",title2="Input"): # janelhina generica, uso: sei la
 class trap_show(tk.Frame):  # mostra o resulta pra trape
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.pack_propagate(0)
         global pontos
         global f_pontos
         global trapezio
@@ -126,6 +128,7 @@ class janelinha_trape(tk.Frame):  # backend do frontend do backend
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         m = self
+        self.pack_propagate(0)
         # master = 
         label_ab = tk.Label(self, text="Insira os valores de A e B separados")
         label_ab.pack(pady=10, padx=10)
@@ -138,7 +141,9 @@ class janelinha_trape(tk.Frame):  # backend do frontend do backend
         label_f.pack(pady=12, padx=12)        
         master = Tk()
         # print(type(self))
-        e1 = Entry(master)
+        master.title("Trapezio")
+        
+        e1 = ttk.Entry(master)
         e1.pack()
         e2 = ttk.Entry(master)
         e2.pack()
@@ -273,37 +278,50 @@ def trapy():
 
 def newtao():
     # Definindo inpu
-    pontos = []  # lista dos ponto
+    global pontos_newton
+    global polino
+    global pn
+    global raiz
+    pontos_newton = []  # lista dos ponto
     k = 0
-    while True:
-        k += 1
-        while True:
-            print("informe X e f(x) pro ", k, "º ponto")
-            l = input()
-            if not l:  # termina quando n bota nd
-                break
-            l = l.split()  # casta pruma lista
-            if len(l) == 2:
-                break
-            else:
-                print("Deu ruim")
-        if not l:
-            break
-        for i in range(len(l)):  # formata pra pontos
-            l[i] = float(l[i])
-        pontos.append(l)
-
+    # while True:
+    #     k += 1
+    #     while True:
+    #         print("informe X e f(x) pro ", k, "º ponto")
+    #         l = input()
+    #         if not l:  # termina quando n bota nd
+    #             break
+    #         l = l.split()  # casta pruma lista
+    #         if len(l) == 2:
+    #             break
+    #         else:
+    #             print("Deu ruim")
+    #     if not l:
+    #         break
+    #     for i in range(len(l)):  # formata pra pontos_newton
+    #         l[i] = float(l[i])
+    #     pontos_newton.append(l)
+    data = {}
+    with open('newton.txt') as fp:
+        data = json.load(fp)
+    pontos_newton = data['pontos']
     l = []
-    for i in range(len(pontos)):
-        l.append(pontos[i][1])
+    dtt= {}
+    dtt['x'] = l
+    for i in range(len(pontos_newton)):
+        l.append(pontos_newton[i][1])
+        dtt['x'].append(pontos_newton[i][0])
     tabela = []  # tabelas pra dif div
     tabela.append(l)
+    dtt['fx'] = l
+    with open('pontos.txt', 'w') as fp:
+        json.dump(dtt, fp)
     # fax os calculo do tipo f(x1, x2, x3)
-    for i in range(len(pontos) - 1):
+    for i in range(len(pontos_newton) - 1):
         l = []
-        for j in range(len(pontos) - i - 1):
+        for j in range(len(pontos_newton) - i - 1):
             dif = (tabela[i][j + 1] - tabela[i][j]) / \
-                (pontos[j + 1 + i][0] - pontos[j][0])
+                (pontos_newton[j + 1 + i][0] - pontos_newton[j][0])
             l.append(dif)
         tabela.append(l)
     difdiv = []
@@ -311,17 +329,16 @@ def newtao():
         difdiv.append(tabela[i][0])
 
     # somas os treco
-    suma = 0
-    for i in range(1, len(pontos)):
-        produt = 1
-        for k in range(i):  # produto
-            # tava no livro c calculo, eh vdd isso
-            produt *= (P([-pontos[k][0], 1]))
-        suma += difdiv[i] * produt
-    Pn = difdiv[0] + suma
-    funcao = list(Pn)  # casta pra lista, mas sem racismo
+    somatorio = 0
+    for i in range(1, len(pontos_newton)):
+        produtorio = 1
+        for k in range(i):  # Aqui será feito o produtório do final da página
+            produtorio *= (P([-pontos_newton[k][0], 1]))  # P([-pontos_newton[k][0], 1]) = (X-Xk)
+        somatorio += difdiv[i] * produtorio
+    Pn = difdiv[0] + somatorio
     # po man, isso de deixa le os breguete numa boa
     texto = ""
+    funcao = list(Pn)
     for i in range(len(funcao)):
         if funcao[i] == 0:
             continue
@@ -330,28 +347,43 @@ def newtao():
         else:
             texto += " + " + str(funcao[i])
             texto += ("*x^%o" % (i))
-    print("Pn(x) :")
-    print(texto)
-    s = input(
-        "Deseja calcular Pn(x) dado um valor de x? \n [S/N]").lower()
-    if s == "s":
-        print("Pn(x) em qual ponto?")
-        p = float(input())
+    # print("Pn(x) :")
+    # print(texto)
+    polino = texto
+    with open('nome.txt', 'w') as fp:
+        fp.write('{},{}'.format(texto, polynomial.polynomial.polyroots(list(Pn))))
+
+    # s = input(
+    #     "Deseja calcular Pn(x) dado um valor de x? \n [S/N]").lower()
+    if data['f(x)'] == "s":
+        # print("Pn(x) em qual ponto?")
+        # p = float(input())
         print("Pn(%a) é igual a %a" % (p, Pn(p)))
+        data["polinomio"] = texto
+        data['root'] = polynomial.polynomial.polyroots(list(Pn))
+        pn = str(Pn(p))
+        data['Pn(x)'] = "Pn(%a) é igual a %a" % (p, Pn(p))
         with open("newton.txt", 'w') as fp:
-            fp.write("Polinomio: {} \n".format(texto))
-            fp.write('Raizes: {} \n'.format(polynomial.polynomial.polyroots(list(Pn))))
-            fp.write("Pn(%a) é igual a %a" % (p, Pn(p)))
-    print("Raízes de Pn(x): ", polynomial.polynomial.polyroots(list(Pn)))
-    # calculando f(x) nos pontos dados através de Pn(x)
+            json.dump(data, fp)
+
+    print("Raízes de Pn(x): ", polynomial.polynomial.polyroots(list(Pn)) )  
+    # calculando f(x) nos pontos_newton dados através de Pn(x)
     print("(x,Pn(x))")
-    for i in range(len(pontos)):
-        print("(%a,%a)" % (pontos[i][0], round(Pn(pontos[i][0]), 4)))
+    for i in range(len(pontos_newton)):
+        print("(%a,%a)" % (pontos_newton[i][0], round(Pn(pontos_newton[i][0]), 4)))
+
+    data["polinomio"] = texto
+    data['root'] = polynomial.polynomial.polyroots(list(Pn))
+    ks = ''
+    for x in data['root']:
+        ks += str(x)
+    data = {
+        'polinomio': texto,
+        'root': ks
+    }
     with open("newton.txt", 'w') as fp:
-            fp.write("Polinomio: {} \n".format(texto))
-            fp.write('Raizes: {} \n'.format(polynomial.polynomial.polyroots(list(Pn))))
-            for i in range(len(pontos)):
-                fp.write("(%a,%a)" % (pontos[i][0], round(Pn(pontos[i][0]), 4)))
+        json.dump(data, fp)
+        
     
 
 class App(tk.Tk):
@@ -369,7 +401,7 @@ class App(tk.Tk):
 
         self.frames = {}
 
-        for F in (StartPage, janelinha_trape, trap_show, PageTwo, PageThree):
+        for F in (StartPage, janelinha_trape, trap_show, PageTwo, PageThree, PageTwoV2):
 
             frame = F(container, self)
 
@@ -386,9 +418,10 @@ class App(tk.Tk):
 
 
 class StartPage(tk.Frame):
-
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.height = 100
+        self.width = 100
         label = tk.Label(self, text="Start Page", font=LARGE_FONT)
         label.pack(pady=10, padx=10)
         pygame.mixer.music.stop()
@@ -403,12 +436,15 @@ class StartPage(tk.Frame):
         button3 = ttk.Button(self, text="Graph Page",
                              command=lambda: controller.show_frame(PageThree))
         button3.pack()
-
+        button3 = ttk.Button(self, text="V2",
+                             command=lambda: controller.show_frame(PageTwoV2))
+        button3.pack()
 
 class PageOne(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.pack_propagate(0)
         label = tk.Label(self, text="Page One!!!", font=LARGE_FONT)
         label.pack(pady=10, padx=10)
 
@@ -420,28 +456,22 @@ class PageOne(tk.Frame):
                              command=lambda: controller.show_frame(PageTwo))
         button2.pack()
 
-# class NewtonPage(tk.Frame):
-#     def __init__(self, parent,controller):
-#         tk.Frame.__init__(self, parent)
-#         l = []
-#         label_poli = tk.Label(self, Text=l[0], font=LARGE_FONT)
-#         label_poli.pack(pady=10, padx=10)
-#         label_x = tk.Label(self, Text=l[1], font=LARGE_FONT)
-#         label_x.pack(pady=10, padx=10)
-#         label_y = tk.Label(self, Text=l[2], font=LARGE_FONT)
-#         label_y.pack(pady=10, padx=10)
 
 
 class PageTwo(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.pack_propagate(0)
         label = tk.Label(self, text="Newton Interpolation Yeye", font=LARGE_FONT)
         label.pack(pady=10, padx=10)
 
         #pygame
-        pygame.mixer.Sound.play(crash_sound)
-
+        # def game_on():
+        #     pygame.mixer.music.load('bgm.mp3')
+        #     pygame.mixer.music.play()
+        # def stop():
+        #     pygame.mixer.music.stop()
 
         # entry1 = ttk.Entry(self)
         # entry1.pack()
@@ -450,7 +480,7 @@ class PageTwo(tk.Frame):
         # def get_val():
         #     with open('butons.txt', 'w') as fp:
         #         fp.write(e1.get())
-
+        
         def set_all():
             with open('newton.txt') as fp:
                 global polino
@@ -466,16 +496,126 @@ class PageTwo(tk.Frame):
                              command=lambda: controller.show_frame(StartPage))
         button1.pack()
 
-        button2 = ttk.Button(self, text="save",command=lambda: controller.show_frame(set_all))
+        button2 = ttk.Button(self, text="save",command=lambda: set_all)
         button2.pack()
+
+        button3 = ttk.Button(self, text="PLAY", command=lambda: SalsaTequila)
+        button3.pack()
+
+        button4 = ttk.Button(self, text="STOP", command=lambda: stopsalsa)
+        button4.pack()
+
 
         # button3 = ttk.Button(self, text="Show", command=lambda: controller.show_frame(NewtonPage))
         # button3.pack()
+
+class PageTwoV2(tk.Frame):  # backend do frontend do backend
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.pack_propagate(0)
+        # master =
+        label_ab = tk.Label(self, text="Insira pontos x na tabela, pressione ADD")
+        label_ab.pack(pady=10, padx=10)
+
+        label_n = tk.Label(self, text='E depois END pra concluir')
+        label_n.pack(pady=11, padx=11)
+        # label_f = tk.Label(self, text='calcular x(deixar em branco p/ n)')
+        # label_f.pack(pady=12, padx=12)
+        master = Tk()
+        # print(type(self))
+        master.title("1-x f(x) 2-Pn(x)")
+        
+        e1 = ttk.Entry(master)
+        e1.pack()
+        e1.grid(row=0, column=1)
+        e2 = ttk.Entry(master)
+        e2.pack()
+        e2.grid(row=1, column=1)
+
+        def set_pontos():  # isso seta os var pro trape
+            nonlocal self
+            global pontos_newton
+            ls = e1.get().split()
+            ls = [int(x) for x in ls]
+            pontos_newton.append(ls)
+            data = {}
+            data["pontos"] = pontos_newton
+            data['pares'] = pontos_newton
+            data["f(x)"] = e2.get().split()
+            with open('newton.txt', 'w') as fp:
+                json.dump(data, fp)
+            with open('newt.txt', 'a') as fp:
+                json.dump(data, fp)
+            
+            
+        def calcula():
+            newtao()
+            popup = tk.Tk()
+            global polino
+            global pn
+            # lista de pontos_newton[i][0] = x e pontos_newton[i][1] = f(x)
+            global pontos_newton
+            lx = []
+            ly = []
+            data = { }
+            try:
+                with open('pontos.txt') as fp:
+                    data = json.load(fp)
+            except:
+                for par_coord in data['pontos']:
+                    lx.append(par_coord[0])
+                    ly.append(par_coord[1])
+            root = []
+            # popup2 = tk.Tk()
+            # popup3 = tk.Tk()
+            with open('newton.txt') as fp:
+                dt = json.load(fp)
+                polino = dt['polinomio']
+                if 'Pn(x)' in dt.keys():
+                    pn = dt['Pn(x)']
+                root = dt['root']
+            with open('nome.txt') as fp:
+                lst = fp.read().split(',')
+                polino=lst[0]
+                root = lst[1]
+            popup.wm_title = polino
+            # popup2.wm_title = root
+            # popup3.wm_title = pn
+            print(polino)
+            print(root)
+            label1 = ttk.Label(popup, text=polino, font=("Verdana", 12))
+            label1.pack(side="top", fill="x", pady=10)
+            lx = [int(x) for x in lx]
+            ly = [int(x) for x in ly]
+            dtt = {'x':lx, 'fx':ly}
+            df = DataFrame(data=dtt)
+            ax = df.plot.bar(x='x', y='fx')
+            plt.show()
+
+            
+
+        button1 = ttk.Button(self, text="Hommie",
+                             command=lambda: controller.show_frame(StartPage))
+        button1.pack()
+
+        button2 = ttk.Button(self, text="ADD",
+                             command=set_pontos)
+        button2.pack()
+
+        button3 = ttk.Button(self, text="FINISH",
+                             command=calcula)
+        button3.pack()
+        # Button(master, text='CALC', command=trapezio_info).grid(  # calcula
+        #     row=3, column=1, sticky=W, pady=4)
+        # Button(master, text='REVELA O PODER', command=trap_show).grid(  # mostra
+        #     row=3, column=2, sticky=W, pady=4)
 
 class PageThree(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.pack_propagate(0)
         label = tk.Label(self, text="Graph Page!", font=LARGE_FONT)
         label.pack(pady=10, padx=10)
 
