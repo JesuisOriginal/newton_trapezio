@@ -396,6 +396,8 @@ class App(tk.Tk):
 
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
+        self.width = 100
+        self.height = 100
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
@@ -429,14 +431,14 @@ class StartPage(tk.Frame):
                             command=lambda: controller.show_frame(janelinha_trape))
         button.pack()
 
-        button2 = ttk.Button(self, text="Interpolação Newton",
+        button2 = ttk.Button(self, text="Salsa Tequila Menu",
                              command=lambda: controller.show_frame(PageTwo))
         button2.pack()
 
-        button3 = ttk.Button(self, text="Graph Page",
+        button3 = ttk.Button(self, text="Graph Test",
                              command=lambda: controller.show_frame(PageThree))
         button3.pack()
-        button3 = ttk.Button(self, text="V2",
+        button3 = ttk.Button(self, text="Newtão Menu",
                              command=lambda: controller.show_frame(PageTwoV2))
         button3.pack()
 
@@ -496,13 +498,17 @@ class PageTwo(tk.Frame):
                              command=lambda: controller.show_frame(StartPage))
         button1.pack()
 
-        button2 = ttk.Button(self, text="save",command=lambda: set_all)
+        button2 = ttk.Button(self, text="Planeta?",command=lambda: SalsaTequila('cesar'))
         button2.pack()
 
-        button3 = ttk.Button(self, text="PLAY", command=lambda: SalsaTequila)
+        button4 = ttk.Button(self, text="OLHA O MACACO",
+                             command=lambda: SalsaTequila('reiso'))
+        button4.pack()
+
+        button3 = ttk.Button(self, text="CERVEZA MUY BUENO", command=lambda: SalsaTequila('play'))
         button3.pack()
 
-        button4 = ttk.Button(self, text="STOP", command=lambda: stopsalsa)
+        button4 = ttk.Button(self, text="STOP", command=lambda: SalsaTequila('stop'))
         button4.pack()
 
 
@@ -592,10 +598,27 @@ class PageTwoV2(tk.Frame):  # backend do frontend do backend
             df = DataFrame(data=dtt)
             ax = df.plot.bar(x='x', y='fx')
             plt.show()
+            form = polino.replace('^', '**')
+            xa = []
+            ya =[]
+            for x in range(-50, 51, 1):
+                xa.append(x)
+                ya.append(eval(form))
+            f = plt.Figure()
+            a = f.add_subplot(111)
+            a.plot(xa, ya)
+
+            Canvas = FigureCanvasTkAgg(f, self)
+            canvas.show()
+            canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+
+            toolbar = NavigationToolbar2TkAgg(canvas ,self)
+            toolbar.update()
+            canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
             
 
-        button1 = ttk.Button(self, text="Hommie",
+        button1 = ttk.Button(self, text="Voltar",
                              command=lambda: controller.show_frame(StartPage))
         button1.pack()
 
@@ -616,6 +639,7 @@ class PageThree(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.pack_propagate(0)
+        global pontos_newton
         label = tk.Label(self, text="Graph Page!", font=LARGE_FONT)
         label.pack(pady=10, padx=10)
 
@@ -634,6 +658,30 @@ class PageThree(tk.Frame):
         toolbar = NavigationToolbar2TkAgg(canvas, self)
         toolbar.update()
         canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+
+def SalsaTequila(status='play'):
+    pygame.mixer.music.load('bgm.mp3')
+    if status == 'play':
+        pygame.mixer_music.load('bgm.mp3')
+        pygame.mixer_music.play(0)
+        pygame.mixer.music.play(0)
+    elif status == 'loop':
+        pygame.mixer_music.play(-1)
+        pygame.mixer.music.play(-1)
+    elif status == 'stop':
+        pygame.mixer_music.stop()
+        pygame.mixer.music.stop()
+    elif status == 'cesar':
+        pygame.mixer.music.load('cesar.mp3')
+        pygame.mixer_music.load('cesar.mp3')
+        pygame.mixer_music.play(0)
+        pygame.mixer.music.play(0)
+    elif status == 'reiso':
+        pygame.mixer.music.load('reiso.mp3')
+        pygame.mixer_music.load('reiso.mp3')
+        pygame.mixer_music.play(0)
+        pygame.mixer.music.play(0)
 
 
 app = App()
